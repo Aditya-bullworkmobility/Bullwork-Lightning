@@ -6,36 +6,97 @@ REPO_ROOT="${SCRIPT_DIR}"
 LOG_TAG="BACKUP"
 source "${REPO_ROOT}/jetson_bsp_common.sh"
 
-BOARD="${BOARD:-jetson-orin-nano-devkit-super-nvme}"
+BOARD=""
+BACKUP_DEVICE=""
+ZIP_NAME=""
 OUTPUT_DIR="${REPO_ROOT}/backups"
-ZIP_NAME="${ZIP_NAME:-}"
-BACKUP_DEVICE="${BACKUP_DEVICE:-nvme0n1}"
+DEFAULT_BOARD="jetson-orin-nano-devkit-super-nvme"
+DEFAULT_DEVICE="nvme0n1"
 IMAGES_DIR=""
 
 usage() {
 	cat <<EOF
-Usage: $(basename "$0") [backup-options]
+Usage: $(basename "$0") [options]
 
 Creates a Jetson backup using Linux_for_Tegra/tools/backup_restore and
 packages the resulting images into a timestamped zip archive under
 ${OUTPUT_DIR}.
 
+Options:
+  --zip-name <file>   Override the generated archive name (adds .zip if missing)
+  --board <name>      Set the Jetson board configuration (overrides env)
+  --device <dev>      Set the storage device passed with -e (overrides env)
+  -h, --help          Show this help
+
 Environment variables:
-  BOARD             Target board name (default: ${BOARD})
+  BOARD             Target board name (default: ${DEFAULT_BOARD})
   JETSON_BSP_URL    URL used to download the Jetson BSP if Linux_for_Tegra is
                     not present.
-  BACKUP_DEVICE     Block device passed to -e (default: ${BACKUP_DEVICE})
-  ZIP_NAME          Override the generated archive name (default timestamped)
-
-Any additional arguments are forwarded to l4t_backup_restore.sh, for example:
-  $(basename "$0") -e nvme0n1
+  BACKUP_DEVICE     Block device passed to -e (default: ${DEFAULT_DEVICE})
 EOF
 }
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-	usage
-	exit 0
-fi
+ZIP_NAME_CLI=""
+BOARD_CLI=""
+DEVICE_CLI=""
+
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+		-h|--help)
+			usage
+			exit 0
+			;;
+		--zip-name)
+			if [[ -z "${2:-}" ]]; then
+				log "Error: --zip-name requires an argument"
+				exit 1
+			fi
+			ZIP_NAME_CLI="$2"
+			shift 2
+			;;
+		--zip-name=*)
+			ZIP_NAME_CLI="${1#*=}"
+			shift
+			;;
+		--board)
+			if [[ -z "${2:-}" ]]; then
+				log "Error: --board requires an argument"
+				exit 1
+			fi
+			BOARD_CLI="$2"
+			shift 2
+			;;
+		--board=*)
+			BOARD_CLI="${1#*=}"
+			shift
+			;;
+		--device)
+			if [[ -z "${2:-}" ]]; then
+				log "Error: --device requires an argument"
+				exit 1
+			fi
+			DEVICE_CLI="$2"
+			shift 2
+			;;
+		--device=*)
+			DEVICE_CLI="${1#*=}"
+			shift
+			;;
+		--)
+			shift
+			break
+			;;
+		*)
+			log "Unknown option: $1"
+			usage
+			exit 1
+			;;
+	esac
+done
+
+ZIP_NAME="${ZIP_NAME_CLI:-}"
+BOARD="${BOARD_CLI:-${DEFAULT_BOARD}}"
+BACKUP_DEVICE="${DEVICE_CLI:-${DEFAULT_DEVICE}}"
 
 ensure_host_dependencies
 require_command zip
@@ -51,30 +112,17 @@ fi
 
 SUDO_BIN="$(needsudo)"
 
-args=("$@")
-if [[ -n "${BACKUP_DEVICE}" ]]; then
-	has_device_flag=0
-	for arg in "${args[@]}"; do
-		if [[ "${arg}" == "-e" ]]; then
-			has_device_flag=1
-			break
-		fi
-	done
-	if [[ "${has_device_flag}" -eq 0 ]]; then
-		args+=("-e" "${BACKUP_DEVICE}")
-	fi
-fi
-
 log "Starting backup for board ${BOARD}"
+log "Invoking ./tools/backup_restore/l4t_backup_restore.sh -b -e ${BACKUP_DEVICE} ${BOARD}"
 if [[ -n "${SUDO_BIN}" ]]; then
 	(
 		cd "${L4T_DIR}"
-		"${SUDO_BIN}" env LC_ALL=C LANG=C ./tools/backup_restore/l4t_backup_restore.sh -b "${args[@]}" "${BOARD}"
+		"${SUDO_BIN}" env LC_ALL=C LANG=C ./tools/backup_restore/l4t_backup_restore.sh -b -e "${BACKUP_DEVICE}" "${BOARD}"
 	)
 else
 	(
 		cd "${L4T_DIR}"
-		LC_ALL=C LANG=C ./tools/backup_restore/l4t_backup_restore.sh -b "${args[@]}" "${BOARD}"
+		LC_ALL=C LANG=C ./tools/backup_restore/l4t_backup_restore.sh -b -e "${BACKUP_DEVICE}" "${BOARD}"
 	)
 fi
 

@@ -1,0 +1,11 @@
+# Generated artifacts
+backups/
+downloads/
+
+# BSP runtime outputs
+Linux_for_Tegra/
+
+# Editor and system noise
+*.swp
+*.swo
+.DS_Store
