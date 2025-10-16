@@ -23,7 +23,15 @@ a Jetson Orin Nano dev kit (`jetson-orin-nano-devkit-super-nvme` by default).
   flashing per NVIDIA docs.
 - For the Jetson Orin Nano dev kit, short the recovery pads (Force Recovery:
   pinpoint the pads near the 40-pin header, typically `FC REC` and `GND`) while
-  powering on to enter recovery mode.
+  powering on to enter recovery mode. The photos below show the wiring:
+  ![Jetson recovery wiring overview](images/IMG-20251016-WA0002.jpg)
+  ![Jetson recovery wiring close-up](images/IMG-20251016-WA0003.jpg)
+
+  Steps:
+  1. Power off the dev kit and disconnect USB-C.
+  2. Use a dupont jumper to connect `FC REC` to the adjacent `GND` pin (highlighted above).
+  3. While the jumper is in place, reconnect USB-C and tap the power button.
+  4. Once the host PC detects the device as `0955:7523`, remove the jumper and proceed with backup/restore.
 
 The helper scripts attempt to install any missing packages automatically using
 `apt-get` (sudo is used when necessary). If APT is unavailable, install the
@@ -54,6 +62,8 @@ sudo ./backup_and_zip.sh --board jetson-orin-nano-devkit-super-nvme \
     --device nvme0n1 --zip-name jetson-backup.zip
 ```
 
+![Backup flow overview](images/backup_flow.png)
+
 The script calls `l4t_backup_restore.sh -b -e <BACKUP_DEVICE>` internally, then
 packages `Linux_for_Tegra/tools/backup_restore/images/` into
 `backups/<board>-backup-<timestamp>.zip` and emits a matching `.sha256`.
@@ -79,6 +89,8 @@ Environment overrides:
 sudo ./flash_from_zip.sh --board jetson-orin-nano-devkit-super-nvme \
     --device nvme0n1 backups/<archive>.zip [extra restore flags]
 ```
+
+![Flashing flow overview](images/flashing_flow.png)
 
 The script unpacks the archive, replaces the BSP’s `images/` directory with its
 contents, and invokes `l4t_backup_restore.sh -r -e <BACKUP_DEVICE>` for the
