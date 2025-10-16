@@ -90,7 +90,7 @@ sudo ./flash_from_zip.sh --board jetson-orin-nano-devkit-super-nvme \
     --device nvme0n1 backups/<archive>.zip [extra restore flags]
 ```
 
-![Flashing flow overview](images/flashing_flow.png)
+![Flashing flow overview](images/restoring_flow.png)
 
 The script unpacks the archive, replaces the BSP’s `images/` directory with its
 contents, and invokes `l4t_backup_restore.sh -r -e <BACKUP_DEVICE>` for the
