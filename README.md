@@ -58,8 +58,7 @@ sudo ./backup_and_zip.sh
 Example with a custom archive name:
 
 ```bash
-sudo ./backup_and_zip.sh --board jetson-orin-nano-devkit-super-nvme \
-    --device nvme0n1 --zip-name jetson-backup.zip
+sudo ./backup_and_zip.sh --zip-name <image_name>.zip
 ```
 
 ![Backup flow overview](images/backup_flow.png)
@@ -83,11 +82,10 @@ Environment overrides:
 - `SKIP_APPLY_BINARIES=1` – prevent the helper from running `apply_binaries.sh`
   (useful if you manage the rootfs manually).
 
-## Restoring
+## Flashing
 
 ```bash
-sudo ./flash_from_zip.sh --board jetson-orin-nano-devkit-super-nvme \
-    --device nvme0n1 backups/<archive>.zip [extra restore flags]
+sudo ./flash_from_zip.sh backups/<archive>.zip [extra restore flags]
 ```
 
 ![Flashing flow overview](images/restoring_flow.png)
