@@ -24,7 +24,7 @@ DOWNLOAD_DIR = os.path.expanduser("~/.cache/jetson-flasher/downloads")
 # This resolves toolkit dir automatically for both dev folder and /opt install.
 def resolve_toolkit_dir() -> str:
     local = os.path.dirname(os.path.abspath(__file__))
-    opt = "/opt/Bullwork_lightning"
+    opt = "/Bullwork_lightning"
     if os.path.isfile(os.path.join(opt, "flash_from_zip.sh")):
         return opt
     return local
@@ -334,6 +334,17 @@ class Flasher(QWidget):
 
     def append_log(self, s: str):
         self.log.append(s.rstrip())
+
+    def on_flash_finished(self, code: int, _status):
+        self.proc = None
+        self.set_busy(False)
+
+        if code == 0:
+            self.status.setText("Status: Flash complete ✅ Reboot/power-cycle Jetson.")
+            self.append_log("\n✅ Done. Reboot/power-cycle the Jetson now.")
+        else:
+            self.status.setText(f"Status: Flash FAILED ❌ (exit code {code})")
+            self.append_log(f"\n❌ Flash failed with exit code {code}. Check logs above.")
 
     def set_busy(self, busy: bool):
         self.btn_check.setEnabled(not busy)
